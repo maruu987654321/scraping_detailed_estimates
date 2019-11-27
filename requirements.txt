@@ -1,0 +1,4 @@
+pandas==0.25.1
+requests==2.22.0
+beautifulsoup4==4.8.1
+mysql-connector-python==8.0.18

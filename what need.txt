@@ -1,0 +1,28 @@
+There are two websites with similar information that I want to capture:
+https://www.zacks.com/stock/quote/KBH/detailed-estimates
+https://finance.yahoo.com/quote/KBH/analysis?p=KBH&.tsrc=fin-srch
+
+I am not 100% sure I have covered all that needs to be captured 
+in the attached spreadsheet but this will give you a good starting idea.
+
+I have a small linux server with some space on it and would l
+ike the data captured and stored here. There is some other project saved 
+here so would be important to create a separate folder to hold and run this data)
+
+The script would run once a week (maybe on a Sunday afternoon) 
+and capture all the data on the same list of stocks.
+
+It would essentially track these data points for 12 weeks. After 12 weeks, 
+the oldest data would drop off / be deleted.
+
+Once it collected the data, it would email a spreadsheet that tracked specific changes for 
+instance, it would track weekly changes in Row 3, 4, 5, 7, 13, 15, 26, 27, 28, 31, 32, 34, 
+35, 37, 38, 41, 48, 49, 50.
+
+Need some way to get the report (maybe emailed after created)
+
+Need some way to bulk download raw data files on each stock 
+(maybe a spreadsheet that reads the stock names and then creates a 
+file that can be downloaded with a terminal command or via a basic web interface.)
+
+I am sure this is not very clear so let me know what questions you have.
