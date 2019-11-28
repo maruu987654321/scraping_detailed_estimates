@@ -4,8 +4,42 @@ import pandas as pd
 import datetime 
 import os.path
 from os import path
+import sqlalchemy
+import mysql.connector
+import pymysql
 
+database_username = 'root'   #type your username
+database_password = 'www777#A'   #type your password
+database_ip       = '127.0.0.1'
+database_name     = 'all_stocks'  #type name your database
 name_file_with_stock = 'new_name.xls'  #name of file where lie all stocks
+
+
+def write_data_database(df, name_stock):
+    database_connection = sqlalchemy.create_engine('mysql+mysqlconnector://{0}:{1}@{2}/{3}'.
+                                               format(database_username, database_password, 
+                                                      database_ip, database_name), pool_recycle=1, pool_timeout=57600).connect()
+
+
+    df.to_sql(con=database_connection, name='{}'.format(name_stock), if_exists='replace',chunksize=100)
+    database_connection.close()
+
+def create_database(df, name_stock):
+    try:
+        mydb = mysql.connector.connect(
+            host="localhost",
+            user=database_username,
+            passwd=database_password,
+            )
+
+        mycursor = mydb.cursor()
+
+        mycursor.execute("CREATE DATABASE {}".format(database_name)) 
+        write_data_database(df, name_stock)
+
+    except mysql.connector.errors.DatabaseError:
+
+        write_data_database(df, name_stock)
 
 new_zacks_current_week = []
 zacks_current_week = []
@@ -159,51 +193,63 @@ def _color_if_even(s):
     return ['font-weight: bold' if val == 'Earning Ectimate' or val == 'Revenue / Sales Estimate' or val == 'Earning history' or val == 'EPS Trend' or val == 'EPS Revision' or val == 'Growth Estimates' or val == 'Zacks Upside' else '' for val in s]
 
 def write_data(all_value_yahoo, all_value_zack, name_stock, date_zack, date_yahoo):
-    if path.exists("new_report_{}.xls".format(item)) == True:
-        df = pd.read_excel (r'new_report_{}.xls'.format(item))
-        for i in df.columns:
-            if 'Zacks' in i:
-                zacks_current_week.append(df[i])
+    s1 = pd.Series(title_first_column, name=name_stock)
+    s2 = pd.Series(all_value_yahoo, name=date_yahoo)
+    s3 = pd.Series(all_value_zack, name=date_zack)
+    frames = [s1, s2, s3]
+    result = pd.concat(frames, axis=1)
+    create_database(result, name_stock)
+    database_connection = sqlalchemy.create_engine('mysql+mysqlconnector://{0}:{1}@{2}/{3}'.
+                                               format(database_username, database_password, 
+                                                      database_ip, database_name), pool_recycle=1, pool_timeout=57600).connect()
+    df = pd.read_sql('SELECT * FROM {}'.format(name_stock), con=database_connection)
+    print(df)
+    #if path.exists("new_report_{}.xls".format(item)) == True:
+    #    df = pd.read_excel (r'new_report_{}.xls'.format(item))
+    #    for i in df.columns:
+    #        if 'Zacks' in i:
+    #            zacks_current_week.append(df[i])
         
-        for i in df.columns:
-            if 'Yahoo' in i:
-                yahoo_current_week.append(df[i])
-                
-        if len(yahoo_current_week) < 12:      
-            s1 = pd.Series(title_first_column, name=name_stock)     
-            s2_yahoo = pd.Series(all_value_yahoo, name=date_yahoo)
-            yahoo_current_week.append(s2_yahoo)
-            yahoo_current_week.insert(0, s1)
-            result_yahoo = pd.concat(yahoo_current_week, axis=1)
-            s2_zacks = pd.Series(all_value_zack, name=date_zack)
-            zacks_current_week.append(s2_zacks)
-            result_zacks = pd.concat(zacks_current_week, axis=1)
-            result = pd.concat([result_yahoo, result_zacks], axis=1)
+    #    for i in df.columns:
+    #        if 'Yahoo' in i:
+    #            yahoo_current_week.append(df[i])
+    #            
+    #    if len(yahoo_current_week) < 12:      
+    #        s1 = pd.Series(title_first_column, name=name_stock)     
+    #        s2_yahoo = pd.Series(all_value_yahoo, name=date_yahoo)
+    #        yahoo_current_week.append(s2_yahoo)
+    #         yahoo_current_week.insert(0, s1)
+    #        result_yahoo = pd.concat(yahoo_current_week, axis=1)
+    #        s2_zacks = pd.Series(all_value_zack, name=date_zack)
+     #       zacks_current_week.append(s2_zacks)
+     #       result_zacks = pd.concat(zacks_current_week, axis=1)
+     #       result = pd.concat([result_yahoo, result_zacks], axis=1)
             #result = result.style.apply(_color_if_even, subset=[name_stock])
-            result.to_excel("new_report_{}.xls".format(item),sheet_name='report', index=False)
-        else:
-            s1 = pd.Series(title_first_column, name=name_stock) 
-            s2_yahoo = pd.Series(all_value_yahoo, name=date_yahoo)
-            new_lst_yahoo = yahoo_current_week[1:]
-            new_lst_yahoo.append(s2_yahoo)
-            new_lst_yahoo.insert(0, s1)
-            result_yahoo = pd.concat(new_lst_yahoo, axis=1)
-            s2_zacks = pd.Series(all_value_zack, name=date_zack)
-            new_lst_zacks = zacks_current_week[1:]
-            new_lst_zacks.append(s2_zacks)
-            result_zacks = pd.concat(new_lst_zacks, axis=1)
-            result = pd.concat([result_yahoo, result_zacks], axis=1)
+     #       create_database(result, name_stock)
+            #result.to_excel("new_report_{}.xls".format(item),sheet_name='report', index=False)
+      #  else:
+      #      s1 = pd.Series(title_first_column, name=name_stock) 
+      #      s2_yahoo = pd.Series(all_value_yahoo, name=date_yahoo)
+      #      new_lst_yahoo = yahoo_current_week[1:]
+      #      new_lst_yahoo.append(s2_yahoo)
+      #      new_lst_yahoo.insert(0, s1)
+      #      result_yahoo = pd.concat(new_lst_yahoo, axis=1)
+      #      s2_zacks = pd.Series(all_value_zack, name=date_zack)
+      #      new_lst_zacks = zacks_current_week[1:]
+      #      new_lst_zacks.append(s2_zacks)
+      #      result_zacks = pd.concat(new_lst_zacks, axis=1)
+      #      result = pd.concat([result_yahoo, result_zacks], axis=1)
             #result = result.style.apply(_color_if_even, subset=[name_stock], axis=1)  #need comment on testing (work if title different)
-            result.to_excel("new_report_{}.xls".format(item),sheet_name='report', index=False)
+      #      result.to_excel("new_report_{}.xls".format(item),sheet_name='report', index=False)
             
-    else:
-        s1 = pd.Series(title_first_column, name=name_stock)
-        s2 = pd.Series(all_value_yahoo, name=date_yahoo)
-        s3 = pd.Series(all_value_zack, name=date_zack)
-        frames = [s1, s2, s3]
-        result = pd.concat(frames, axis=1)
+    #else:
+    #    s1 = pd.Series(title_first_column, name=name_stock)
+    #    s2 = pd.Series(all_value_yahoo, name=date_yahoo)
+    #    s3 = pd.Series(all_value_zack, name=date_zack)
+    #    frames = [s1, s2, s3]
+    #    result = pd.concat(frames, axis=1)
         #result = result.style.apply(_color_if_even, subset=[name_stock])
-        result.to_excel("new_report_{}.xls".format(item),sheet_name='report', index=False)
+   #     result.to_excel("new_report_{}.xls".format(item),sheet_name='report', index=False)
 
 
 if __name__ == '__main__':
