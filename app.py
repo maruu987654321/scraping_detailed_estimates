@@ -21,8 +21,6 @@ def read_stocks(name_file_with_stock):
     list_symbol = df[df.columns[0]].to_list()
     return list_symbol
 
-
-
 def parse_html_table(table):
     n_columns = 0
     n_rows=0
@@ -69,16 +67,20 @@ def get_earning_estimate (name_stock):
     headers = {'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_10_1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/39.0.2171.95 Safari/537.36'}
     main_info = requests.get(url_zacks, headers=headers).text
     soup_zack = BeautifulSoup(main_info, 'lxml')
-    toRemove = soup_zack.findAll('table')
-    table = toRemove[9]
-    df = parse_html_table(table)
-    today_list = list(df.columns.values)[1]
-    date = today_list
-    date_zack = date + ' ' + 'Zacks Current Week'
-    table_most_acc_est_zack = toRemove[12]
-    df_mst_acc_est_zack = parse_html_table(table_most_acc_est_zack)
-    #date = date.split('(')[1]
-    #date = date.replace(')', '')
+    try:
+        toRemove = soup_zack.findAll('table')
+        table = toRemove[9]
+        df = parse_html_table(table)
+        today_list = list(df.columns.values)[1]
+        date = today_list
+        date_zack = date + ' ' + 'Zacks Current Week'
+        table_most_acc_est_zack = toRemove[12]
+        df_mst_acc_est_zack = parse_html_table(table_most_acc_est_zack)
+    except (AttributeError, IndexError):
+        soup_zack = []
+        date_zack = 'Current Quarter (Month Year) Zacks Current Week'
+        df = []
+        df_mst_acc_est_zack = []
     return soup_zack, df, date_zack, df_mst_acc_est_zack
 
 
@@ -210,8 +212,10 @@ if __name__ == '__main__':
         print(item)
         soup_zack, df, date_zack, df_mst_acc_est_zack  = get_earning_estimate (item)
         soup_yahoo, No_analyst_estimates, date_yahoo = get_info_for_yahoo(item)
-        if len(soup_yahoo) == 0:
+        if len(soup_yahoo) == 0 and len(soup_zack) != 0:
+            print('No info for yahoo')
             lst = df.iloc[:,1].to_list()
+            all_value_zack.append(' ')
             all_value_zack.append(lst[0])
             all_value_zack.append(lst[2])
             all_value_zack.append(df_mst_acc_est_zack.iloc[:,1].to_list()[0])
@@ -243,10 +247,51 @@ if __name__ == '__main__':
             all_value_yahoo.extend([' ' for i in range(len(all_value_zack) - 1)]) 
             name_stock = item
             write_data(all_value_yahoo, all_value_zack, name_stock, date_zack, date_yahoo)
-        else:
+            all_value_yahoo = []
+            all_value_zack = []
+
+        if len(soup_zack) == 0 and len(soup_yahoo) != 0:
+            print('No info for zacks')
+            all_value_yahoo.extend([' ' for i in range(4)])
+            all_value_yahoo.append(No_analyst_estimates[0])
+            all_value_yahoo.append(No_analyst_estimates[1])
+            all_value_yahoo.append(No_analyst_estimates[2])
+            all_value_yahoo.append(No_analyst_estimates[3])
+            all_value_yahoo.append(No_analyst_estimates[4])
+            all_value_yahoo.append(' ')
+            all_value_yahoo.append('')
+            all_value_yahoo.append(' ')
+            lst_revenue_yahoo = get_revenue_estimate_yahoo(soup_yahoo)
+            all_value_yahoo.extend(lst_revenue_yahoo)
+            all_value_yahoo.append('')
+            lst_history = get_earning_history(soup_yahoo)
+            all_value_yahoo.extend(lst_history)
+            all_value_yahoo.append('')
+            lst_eps = get_eps_trend(soup_yahoo)
+            all_value_zack.extend([' ' for i in range(5)])
+            all_value_yahoo.extend(lst_eps)
+            all_value_yahoo.append('')
+            lst_rev = get_revision(soup_yahoo)
+            all_value_yahoo.extend(lst_rev[0:2])
+            all_value_yahoo.append(' ')
+            all_value_yahoo.extend(lst_rev[2:])
+            all_value_yahoo.append(' ')
+            all_value_yahoo.append('')
+            growth_yahoo = get_growth_yahoo(soup_yahoo)
+            all_value_yahoo.extend(growth_yahoo)
+            all_value_yahoo.append('')
+            all_value_yahoo.extend([' ' for i in range(3)])
+            all_value_zack.extend([' ' for i in range(len(all_value_yahoo) - 1)]) 
+            name_stock = item
+            write_data(all_value_yahoo, all_value_zack, name_stock, date_zack, date_yahoo)
+            all_value_yahoo = []
+            all_value_zack = []
+
+        if len(soup_zack) != 0 and len(soup_yahoo) != 0:
+            print('Info for zacks and yahoo')
             lst = df.iloc[:,1].to_list()
-            all_value_yahoo.append(' ')
-            all_value_yahoo.append(' ')
+            all_value_yahoo.extend([' ' for i in range(3)])
+            all_value_zack.append(' ')
             all_value_zack.append(lst[0])
             all_value_zack.append(lst[2])
             all_value_zack.append(df_mst_acc_est_zack.iloc[:,1].to_list()[0])
@@ -305,6 +350,8 @@ if __name__ == '__main__':
             all_value_zack.extend(lst_upside_zack)
             name_stock = item
             write_data(all_value_yahoo, all_value_zack, name_stock, date_zack, date_yahoo)
+            all_value_yahoo = []
+            all_value_zack = []
 
 
         
