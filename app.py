@@ -7,14 +7,16 @@ from os import path
 import sqlalchemy
 import mysql.connector
 import pymysql
+import yaml
 from IPython.display import display, HTML
 
 
-database_username = 'root'   #type your username
-database_password = 'www777#A'   #type your password
-database_ip       = '127.0.0.1'
-database_name     = 'all_stocks'  #type name your database
-name_file_with_stock = 'new_name.xls'  #name of file where lie all stocks
+def load_config(config_file):
+    with open(config_file, 'r') as stream:
+        try:
+            return yaml.safe_load(stream)
+        except yaml.YAMLError as exc:
+            print(exc)
 
 
 def write_data_database(df, name_stock):
@@ -196,77 +198,107 @@ def _color_if_even(s):
 
 def write_data(all_value_yahoo, all_value_zack, name_stock, date_zack, date_yahoo):
     
-    database_connection = sqlalchemy.create_engine('mysql+mysqlconnector://{0}:{1}@{2}/{3}'.
-                                                format(database_username, database_password, 
-                                                       database_ip, database_name), pool_recycle=1, pool_timeout=57600).connect()
+    try:
+        database_connection = sqlalchemy.create_engine('mysql+mysqlconnector://{0}:{1}@{2}/{3}'.
+                                                    format(database_username, database_password, 
+                                                        database_ip, database_name), pool_recycle=1, pool_timeout=57600).connect()
     
-    df = pd.read_sql('SELECT * FROM {}'.format(name_stock), con=database_connection)
-    yahoo_current_week = []
-    zacks_current_week = []
-    for i in df.columns:
-        if 'Zacks' in i:
-            zacks_current_week.append(df[i])
-    for i in df.columns:
-        if 'Yahoo' in i:
-            yahoo_current_week.append(df[i])
-    if len(yahoo_current_week) < 12:      
-        s1 = pd.Series(title_first_column, name=name_stock)
-        s2_yahoo = pd.Series(all_value_yahoo, name=date_yahoo)
-        yahoo_current_week.append(s2_yahoo)
-        yahoo_current_week.insert(0, s1)
-        result_yahoo = pd.concat(yahoo_current_week, axis=1)
-        s2_zacks = pd.Series(all_value_zack, name=date_zack)
-        zacks_current_week.append(s2_zacks)
-        result_zacks = pd.concat(zacks_current_week, axis=1)
-        result_new = pd.concat([result_yahoo, result_zacks], axis=1) 
-        display(result_new)
-        result_new.to_sql(con=database_connection, name='{}'.format(name_stock), if_exists='replace',chunksize=100, index=False)
+    
+        df = pd.read_sql('SELECT * FROM {}'.format(name_stock), con=database_connection)
+        yahoo_current_week = []
+        zacks_current_week = []
+        zacks_current_week2 = []
+        yahoo_current_week2 = []
+        for i in df.columns:
+            if 'Zacks' in i:
+                zacks_current_week.append(df[i])
             
+        for i, j in zip(zacks_current_week, range(1, len(zacks_current_week) + 1)):
+            name = zacks_current_week[0].name
+            new_sr_z = i.rename(name + ' ' + '-' + ' ' + str(j))
+            zacks_current_week2.append(new_sr_z)
+         
+        for i in df.columns:
+            if 'Yahoo' in i:
+                yahoo_current_week.append(df[i])
             
+        for i, j in zip(yahoo_current_week, range(1, len(yahoo_current_week) + 1)):
+            name = yahoo_current_week[0].name
+            new_sr_y = i.rename(name + ' ' + '-' + ' ' + str(j))
+            yahoo_current_week2.append(new_sr_y)
+
+        if len(yahoo_current_week2) < 13:
+            s1 = pd.Series(title_first_column, name=name_stock)
+            s2_yahoo = pd.Series(all_value_yahoo, name=date_yahoo)
+            yahoo_current_week2.insert(0,s2_yahoo)
+            yahoo_current_week2.insert(0, s1)
+            result_yahoo = pd.concat(yahoo_current_week2, axis=1)
+            s2_zacks = pd.Series(all_value_zack, name=date_zack)
+            zacks_current_week2.insert(0, s2_zacks)
+            result_zacks = pd.concat(zacks_current_week2, axis=1)
+            result_new = pd.concat([result_yahoo, result_zacks], axis=1)     
+            result_new.to_sql(con=database_connection, name='{}'.format(name_stock), if_exists='replace',chunksize=100, index=False)
+        else:
+            s1 = pd.Series(title_first_column, name=name_stock)
+            s2_zacks = pd.Series(all_value_zack, name=date_zack)
+            s2_yahoo = pd.Series(all_value_yahoo, name=date_yahoo)
+            y_more_twelve = []
+            z_more_twelve = []
+            z_more_twelve2 = []
+            y_more_twelve2 = []
+            
+            for i in df.columns:
+                if 'Zacks' in i:
+                    z_more_twelve.append(df[i]) 
                     
-    
-    
-    #except sqlalchemy.exc.ProgrammingError: 
-     #   s1 = pd.Series(title_first_column, name=name_stock)
-      #  s2 = pd.Series(all_value_yahoo, name=date_yahoo)
-       # s3 = pd.Series(all_value_zack, name=date_zack)
-        #frames = [s1, s2, s3]
-        #result = pd.concat(frames, axis=1)
-        #create_database(result, name_stock)
-    
-      #  else:
-      #      s1 = pd.Series(title_first_column, name=name_stock) 
-      #      s2_yahoo = pd.Series(all_value_yahoo, name=date_yahoo)
-      #      new_lst_yahoo = yahoo_current_week[1:]
-      #      new_lst_yahoo.append(s2_yahoo)
-      #      new_lst_yahoo.insert(0, s1)
-      #      result_yahoo = pd.concat(new_lst_yahoo, axis=1)
-      #      s2_zacks = pd.Series(all_value_zack, name=date_zack)
-      #      new_lst_zacks = zacks_current_week[1:]
-      #      new_lst_zacks.append(s2_zacks)
-      #      result_zacks = pd.concat(new_lst_zacks, axis=1)
-      #      result = pd.concat([result_yahoo, result_zacks], axis=1)
-            #result = result.style.apply(_color_if_even, subset=[name_stock], axis=1)  #need comment on testing (work if title different)
-      #      result.to_excel("new_report_{}.xls".format(item),sheet_name='report', index=False)
+            for i in df.columns:
+                if 'Yahoo' in i:
+                    y_more_twelve.append(df[i]) 
+                    
+            z_more_twelve = z_more_twelve[:-1]
+            y_more_twelve = y_more_twelve[:-1]
             
-    #else:
-    #    s1 = pd.Series(title_first_column, name=name_stock)
-    #    s2 = pd.Series(all_value_yahoo, name=date_yahoo)
-    #    s3 = pd.Series(all_value_zack, name=date_zack)
-    #    frames = [s1, s2, s3]
-    #    result = pd.concat(frames, axis=1)
-        #result = result.style.apply(_color_if_even, subset=[name_stock])
-   #     result.to_excel("new_report_{}.xls".format(item),sheet_name='report', index=False)
-
-
+            for i, j in zip(z_more_twelve, range(1, len(z_more_twelve) + 1)):
+                name = z_more_twelve[0].name
+                new_sr_z = i.rename(name + ' ' + '-' + ' ' + str(j))
+                z_more_twelve2.append(new_sr_z)
+                
+            for i, j in zip(y_more_twelve, range(1, len(y_more_twelve) + 1)):
+                name = y_more_twelve[0].name
+                new_sr_y = i.rename(name + ' ' + '-' + ' ' + str(j))
+                y_more_twelve2.append(new_sr_y)
+            
+            z_more_twelve2.insert(0, s2_zacks)
+            z_more_twelve2.insert(0, s1)
+            res_zacks = pd.concat(z_more_twelve2, axis=1)
+            y_more_twelve2.insert(0, s2_yahoo)
+            y_more_twelve2.insert(0, s1)
+            res_yahoo = pd.concat(y_more_twelve2, axis=1)
+            result_new = pd.concat([res_yahoo, res_zacks], axis=1) 
+            result_new.to_sql(con=database_connection, name='{}'.format(name_stock), if_exists='replace',chunksize=100, index=False)
+            
+    except sqlalchemy.exc.ProgrammingError: 
+        s1 = pd.Series(title_first_column, name=name_stock)
+        s2 = pd.Series(all_value_yahoo, name=date_yahoo)
+        s3 = pd.Series(all_value_zack, name=date_zack)
+        frames = [s1, s2, s3]
+        result = pd.concat(frames, axis=1)
+        create_database(result, name_stock)
+   
 if __name__ == '__main__':
+    config = load_config('config.yaml')
+    print(config)
+    database_username = config['database_username']   #type your username
+    database_password =  config['password']   #type your password
+    database_ip       =  config['database_ip']
+    database_name     = config['name_database']  #type name your database
+    name_file_with_stock = config['name_file_with_stocks'] #name of file where lie all stocks
     list_symbol = read_stocks(name_file_with_stock)
     for item in list_symbol:
         print(item)
         soup_zack, df, date_zack, df_mst_acc_est_zack  = get_earning_estimate (item)
         soup_yahoo, No_analyst_estimates, date_yahoo = get_info_for_yahoo(item)
         if len(soup_yahoo) == 0 and len(soup_zack) != 0:
-            print('No info for yahoo')
             lst = df.iloc[:,1].to_list()
             #all_value_zack.append(' ')
             all_value_zack.append(lst[0])
@@ -304,7 +336,6 @@ if __name__ == '__main__':
             all_value_zack = []
 
         if len(soup_zack) == 0 and len(soup_yahoo) != 0:
-            print('No info for zacks')
             all_value_yahoo.extend([' ' for i in range(4)])
             all_value_yahoo.append(No_analyst_estimates[0])
             all_value_yahoo.append(No_analyst_estimates[1])
@@ -341,7 +372,6 @@ if __name__ == '__main__':
             all_value_zack = []
 
         if len(soup_zack) != 0 and len(soup_yahoo) != 0:
-            print('Info for zacks and yahoo')
             lst = df.iloc[:,1].to_list()
             all_value_yahoo.extend([' ' for i in range(3)])
             all_value_zack.append(' ')
@@ -405,5 +435,4 @@ if __name__ == '__main__':
             write_data(all_value_yahoo, all_value_zack, name_stock, date_zack, date_yahoo)
             all_value_yahoo = []
             all_value_zack = []
-
-        
+ 

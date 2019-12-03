@@ -1,0 +1,5 @@
+database_username: root
+password: wwwww77777#A
+database_ip: 127.0.0.1
+name_database: database_name
+name_file_with_stocks: 'new_name.xls'
