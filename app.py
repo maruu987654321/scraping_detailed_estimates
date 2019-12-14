@@ -112,11 +112,13 @@ def get_earning_estimate (name_stock):
         today_list = list(df.columns.values)[1]
         date = today_list
         date_zack = date + ' ' + 'Zacks Current Week'
+        date_zack = date_zack.replace(')', '')
+        date_zack = date_zack.replace('(', '')
         table_most_acc_est_zack = toRemove[12]
         df_mst_acc_est_zack = parse_html_table(table_most_acc_est_zack)
     except (AttributeError, IndexError):
         soup_zack = []
-        date_zack = 'Current Quarter (Month Year) Zacks Current Week'
+        date_zack = 'Current Quarter Zacks Current Week'
         df = []
         df_mst_acc_est_zack = []
     return soup_zack, df, date_zack, df_mst_acc_est_zack
@@ -133,10 +135,12 @@ def get_info_for_yahoo(name_stock):
         No_analyst_estimates = table1.iloc[:,1].to_list()
         today_list_yahoo = list(table1.columns.values)[1]
         date_yahoo = today_list_yahoo + ' ' + 'Yahoo Current Week'
+        date_yahoo = date_yahoo.replace(')', '')
+        date_yahoo = date_yahoo.replace('(', '')
     except AttributeError:
         soup_yahoo = []
         No_analyst_estimates = []
-        date_yahoo = 'Current Quarter (Month Year) Yahoo Current Week'
+        date_yahoo = 'Current Quarter Yahoo Current Week'
     return soup_yahoo, No_analyst_estimates, date_yahoo
 
 def get_sales_zacks(soup_zack):
@@ -202,8 +206,6 @@ def write_data(all_value_yahoo, all_value_zack, name_stock, date_zack, date_yaho
         database_connection = sqlalchemy.create_engine('mysql+mysqlconnector://{0}:{1}@{2}/{3}'.
                                                     format(database_username, database_password, 
                                                         database_ip, database_name), pool_recycle=1, pool_timeout=57600).connect()
-    
-    
         df = pd.read_sql('SELECT * FROM {}'.format(name_stock), con=database_connection)
         yahoo_current_week = []
         zacks_current_week = []
@@ -236,8 +238,8 @@ def write_data(all_value_yahoo, all_value_zack, name_stock, date_zack, date_yaho
             s2_zacks = pd.Series(all_value_zack, name=date_zack)
             zacks_current_week2.insert(0, s2_zacks)
             result_zacks = pd.concat(zacks_current_week2, axis=1)
-            result_new = pd.concat([result_yahoo, result_zacks], axis=1)     
-            result_new.to_sql(con=database_connection, name='{}'.format(name_stock), if_exists='replace',chunksize=100, index=False)
+            result_new = pd.concat([result_yahoo, result_zacks], axis=1)   
+            result_new.to_sql(con=database_connection, name='{}'.format(name_stock), if_exists='replace',chunksize=100, index=True)
         else:
             s1 = pd.Series(title_first_column, name=name_stock)
             s2_zacks = pd.Series(all_value_zack, name=date_zack)
@@ -275,8 +277,8 @@ def write_data(all_value_yahoo, all_value_zack, name_stock, date_zack, date_yaho
             y_more_twelve2.insert(0, s1)
             res_yahoo = pd.concat(y_more_twelve2, axis=1)
             result_new = pd.concat([res_yahoo, res_zacks], axis=1) 
-            result_new.to_sql(con=database_connection, name='{}'.format(name_stock), if_exists='replace',chunksize=100, index=False)
-            
+            result_new.to_sql(con=database_connection, name='{}'.format(name_stock), if_exists='replace',chunksize=100, index=True)
+
     except sqlalchemy.exc.ProgrammingError: 
         s1 = pd.Series(title_first_column, name=name_stock)
         s2 = pd.Series(all_value_yahoo, name=date_yahoo)
@@ -285,9 +287,9 @@ def write_data(all_value_yahoo, all_value_zack, name_stock, date_zack, date_yaho
         result = pd.concat(frames, axis=1)
         create_database(result, name_stock)
    
+   
 if __name__ == '__main__':
     config = load_config('config.yaml')
-    print(config)
     database_username = config['database_username']   #type your username
     database_password =  config['password']   #type your password
     database_ip       =  config['database_ip']
@@ -435,4 +437,3 @@ if __name__ == '__main__':
             write_data(all_value_yahoo, all_value_zack, name_stock, date_zack, date_yahoo)
             all_value_yahoo = []
             all_value_zack = []
- 
