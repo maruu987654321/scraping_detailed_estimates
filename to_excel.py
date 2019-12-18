@@ -38,5 +38,8 @@ if __name__ == '__main__':
     for i in tables:
         str_n = ''.join(i)
         df = from_df_to_excel(str_n)
-        del df['index']
-        df.to_excel('{}.xlsx'.format(str_n), engine='xlsxwriter', index=False)
+        try:
+            del df['index']
+            df.to_excel('{}.xlsx'.format(str_n), engine='xlsxwriter', index=False)
+        except KeyError:
+            df.to_excel('{}.xlsx'.format(str_n), engine='xlsxwriter', index=False)

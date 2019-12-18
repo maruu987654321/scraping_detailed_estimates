@@ -25,7 +25,7 @@ def write_data_database(df, name_stock):
                                                       database_ip, database_name), pool_recycle=1, pool_timeout=57600).connect()
 
 
-    df.to_sql(con=database_connection, name='{}'.format(name_stock), if_exists='replace',chunksize=100, index=False)
+    df.to_sql(con=database_connection, name='{}'.format(name_stock), if_exists='replace',chunksize=100, index=True)
     database_connection.close()
 
 def create_database(df, name_stock):
@@ -301,16 +301,14 @@ if __name__ == '__main__':
         soup_zack, df, date_zack, df_mst_acc_est_zack  = get_earning_estimate (item)
         soup_yahoo, No_analyst_estimates, date_yahoo = get_info_for_yahoo(item)
         if len(soup_yahoo) == 0 and len(soup_zack) != 0:
+            all_value_yahoo = []
+            all_value_zack = []
             lst = df.iloc[:,1].to_list()
-            #all_value_zack.append(' ')
+            all_value_zack.append(' ')
             all_value_zack.append(lst[0])
             all_value_zack.append(lst[2])
             all_value_zack.append(df_mst_acc_est_zack.iloc[:,1].to_list()[0])
-            all_value_zack.append(' ')
-            all_value_zack.append(' ')
-            all_value_zack.append(' ')
-            all_value_zack.append(' ')
-            all_value_zack.append(' ')
+            all_value_zack.extend([' ' for i in range(5)]) 
             all_value_zack.append(lst[-1])
             all_value_zack.append('')
             val_revenue_zack = get_sales_zacks(soup_zack)
@@ -334,10 +332,11 @@ if __name__ == '__main__':
             all_value_yahoo.extend([' ' for i in range(len(all_value_zack) - 1)]) 
             name_stock = item
             write_data(all_value_yahoo, all_value_zack, name_stock, date_zack, date_yahoo)
-            all_value_yahoo = []
-            all_value_zack = []
+            
 
         if len(soup_zack) == 0 and len(soup_yahoo) != 0:
+            all_value_yahoo = []
+            all_value_zack = []
             all_value_yahoo.extend([' ' for i in range(4)])
             all_value_yahoo.append(No_analyst_estimates[0])
             all_value_yahoo.append(No_analyst_estimates[1])
@@ -367,20 +366,20 @@ if __name__ == '__main__':
             all_value_yahoo.extend(growth_yahoo)
             all_value_yahoo.append('')
             all_value_yahoo.extend([' ' for i in range(3)])
-            all_value_zack.extend([' ' for i in range(len(all_value_yahoo) - 1)]) 
+            all_value_zack.extend([' ' for i in range(len(all_value_yahoo) - 5)]) 
             name_stock = item
             write_data(all_value_yahoo, all_value_zack, name_stock, date_zack, date_yahoo)
-            all_value_yahoo = []
-            all_value_zack = []
+           
 
         if len(soup_zack) != 0 and len(soup_yahoo) != 0:
+            all_value_yahoo = []
+            all_value_zack = []
             lst = df.iloc[:,1].to_list()
-            all_value_yahoo.extend([' ' for i in range(3)])
+            all_value_yahoo.extend([' ' for i in range(4)])
             all_value_zack.append(' ')
-            all_value_zack.append(lst[0])
-            all_value_zack.append(lst[2])
+            all_value_zack.append(lst[0]) 
+            all_value_zack.append(lst[2]) 
             all_value_zack.append(df_mst_acc_est_zack.iloc[:,1].to_list()[0])
-            all_value_yahoo.append(' ')
             all_value_yahoo.append(No_analyst_estimates[0])
             all_value_zack.append(' ')
             all_value_yahoo.append(No_analyst_estimates[1])
@@ -435,5 +434,4 @@ if __name__ == '__main__':
             all_value_zack.extend(lst_upside_zack)
             name_stock = item
             write_data(all_value_yahoo, all_value_zack, name_stock, date_zack, date_yahoo)
-            all_value_yahoo = []
-            all_value_zack = []
+            
