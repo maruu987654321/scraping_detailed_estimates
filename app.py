@@ -143,6 +143,12 @@ def get_info_for_yahoo(name_stock):
         date_yahoo = 'Current Quarter Yahoo Current Week'
     return soup_yahoo, No_analyst_estimates, date_yahoo
 
+def get_reported_earnings_history(soup_zack):
+    toRemove = soup_zack.findAll('table')
+    tb = parse_html_table(toRemove[11])
+    print(tb)
+    
+    
 def get_sales_zacks(soup_zack):
     toRemove = soup_zack.findAll('table')
     tb = parse_html_table(toRemove[8])
@@ -392,18 +398,30 @@ if __name__ == '__main__':
             all_value_yahoo.append(' ')
             all_value_zack.extend([' ' for i in range(2)])
             lst_revenue_zack = get_sales_zacks(soup_zack)
-            print(lst_revenue_zack)
-            #val_revenue_zack = val_revenue_zack.replace('B', '')
-            #all_value_zack.append(float(val_revenue_zack))
-            #all_value_zack.append(lst[-1])
-            #all_value_zack.append('')
+            val_revenue_zack = lst_revenue_zack[0].replace('B', '')
+            all_value_zack.append(float(val_revenue_zack))
+            all_value_zack.append(float(lst_revenue_zack[1]))
+            all_value_zack.append(' ')
+            all_value_zack.append(float(lst_revenue_zack[3].replace('B', '')))
             all_value_yahoo.append('')
             all_value_yahoo.append(' ')
-            #all_value_zack.append(val_revenue_zack)
             lst_revenue_yahoo = get_revenue_estimate_yahoo(soup_yahoo)
-            all_value_yahoo.extend(lst_revenue_yahoo)
+            lst_revenue_yahoo2 = []
+            for i in lst_revenue_yahoo:
+                i = i.replace('B', '')
+                lst_revenue_yahoo2.append(i)
+            all_value_yahoo.extend(lst_revenue_yahoo2)
+            all_value_zack.append(float(lst_revenue_zack[2].replace('B', '')))
+            all_value_zack.append(float(lst_revenue_zack[4].replace('B', '')))
+            all_value_zack.append(float(lst_revenue_zack[5].replace('%', '')))
+            all_value_zack.append(' ')
+            print(get_reported_earnings_history(soup_zack))
+            
+            
+            
+            
+            
             #all_value_zack.extend([' ' for i in range(6)]) 
-            #all_value_zack.append('')
             all_value_yahoo.append('')
             #all_value_zack.extend([' ' for i in range(4)])
             lst_history = get_earning_history(soup_yahoo)
@@ -418,7 +436,7 @@ if __name__ == '__main__':
             lst_rev = get_revision(soup_yahoo)
             #all_value_zack.extend([' ' for i in range(2)])
             all_value_yahoo.extend(lst_rev[0:2])
-            #lst_revision_zack = get_revision_zack(soup_zack)
+            lst_revision_zack = get_revision_zack(soup_zack)
             #all_value_zack.append(lst_revision_zack[2])
             all_value_yahoo.append(' ')
             #all_value_zack.extend([' ' for i in range(2)])
@@ -433,7 +451,7 @@ if __name__ == '__main__':
             #all_value_zack.append('')
             all_value_yahoo.append('')
             all_value_yahoo.extend([' ' for i in range(3)])
-            #lst_upside_zack = upside_zacks(soup_zack)
+            lst_upside_zack = upside_zacks(soup_zack)
             #all_value_zack.extend(lst_upside_zack)
             name_stock = item
             s1 = pd.Series(title_first_column, name=name_stock)
