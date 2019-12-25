@@ -40,6 +40,14 @@ if __name__ == '__main__':
         df = from_df_to_excel(str_n)
         try:
             del df['index']
-            df.to_excel('{}.xlsx'.format(str_n), engine='xlsxwriter', index=False)
+            writer = pd.ExcelWriter("{}.xlsx".format(str_n), engine='xlsxwriter')
+            df.to_excel(writer, sheet_name='{}'.format(str_n), index=False)
+            workbook  = writer.book
+            worksheet = writer.sheets['{}'.format(str_n)]
+            format1 = workbook.add_format({'align': 'right'})
+            #worksheet.set_row(1, format1)
+            print(df)
+            #worksheet.set_column('B:B', 18, format1)
+            writer.save()
         except KeyError:
             df.to_excel('{}.xlsx'.format(str_n), engine='xlsxwriter', index=False)

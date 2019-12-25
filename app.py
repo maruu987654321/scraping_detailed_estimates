@@ -9,7 +9,8 @@ import mysql.connector
 import pymysql
 import yaml
 from IPython.display import display, HTML
-
+import re
+from json import loads
 
 def load_config(config_file):
     with open(config_file, 'r') as stream:
@@ -52,7 +53,7 @@ all_value_zack = []
 all_value_yahoo = []
 all_value_zack.append('')
 all_value_yahoo.append('')
-title_first_column = ['Earning Ectimate', 'Zack Consensus Estimate', 'Zack Most Recent Consensus', 'Zacks Most Accurate Estimate', 'No of Analyst / Estimates', 'Avg. Estimate', 'Low Estimate', 'High Estimate', 'Year Ago EPS', 'Year over Year Growth Est.', 'Revenue / Sales Estimate', 'Zack Consensus Estimate', 'No. of Analyst', 'Avg. Estimate', 'Low Estimate', 'High Estimate', 'Year Ago Sales', 'Sales Growth (year/est)', 'Earning history', 'EPS Est.', 'EPS Actual', 'Difference', 'Surprise %', 'EPS Trend', 'Current Estimate', 'Up 7 Days Ago', 'Up 30 Days Ago', 'Up 60 Days Ago', 'Up 90 Days Ago', 'EPS Revision', 'Up Last 7 Days', 'Up Last 30 Days', 'Up Last 60 Days', 'Down Last 7 Days', 'Down Last 30 Days', 'Down Last 60 Days', 'Growth Estimates', 'Current Qtr.', 'Next Qtr.', 'Current Year', 'Next Year', 'Next 5 Years (per annum)', 'Past 5 Years (per annum)', 'Zacks Upside', 'Zacks Most Accurate Estimate', 'Zacks Consensus Estimate', 'Earning Expected Surprise']
+title_first_column = ['Earning Ectimate', 'Zack Consensus Estimate', 'Zack Most Recent Consensus', 'Zacks Most Accurate Estimate', 'No of Analyst / Estimates', 'Avg. Estimate', 'Low Estimate', 'High Estimate', 'Year Ago EPS', 'Year over Year Growth Est.', 'Revenue / Sales Estimate', 'Zack Consensus Estimate', 'No. of Analyst', 'Avg. Estimate', 'Low Estimate', 'High Estimate', 'Year Ago Sales', 'Sales Growth (year/est)', 'Earning history', 'EPS Est.', 'EPS Actual', 'Difference', 'Surprise %', 'EPS Trend', 'Current Estimate', 'Up 7 Days Ago', 'Up 30 Days Ago', 'Up 60 Days Ago', 'Up 90 Days Ago', 'EPS Revision', 'Up Last 7 Days', 'Up Last 30 Days', 'Up Last 60 Days', 'Down Last 7 Days', 'Down Last 30 Days', 'Down Last 60 Days', 'Growth Estimates', 'Current Qtr.', 'Next Qtr.', 'Current Year', 'Next Year', 'Next 5 Years (per annum)', 'Past 5 Years (per annum)', 'Zacks Upside', 'Zacks Most Accurate Estimate', 'Zacks Consensus Estimate', 'Earning Expected Surprise','Zacks Rank', 'Yahoo Rank']
 
 def read_stocks(name_file_with_stock):
     df = pd.read_excel (name_file_with_stock) 
@@ -100,6 +101,97 @@ def parse_html_table(table):
             
     return df
 
+def main_info_zacks():
+    try:
+        rank = soup_zack.find_all("p", {"class":"rank_view"})
+        r = rank[0].text
+        r = r.strip()
+        r = int(r[0])
+    except IndexError:
+        r = ''
+    all_value_zack = []
+    lst = df.iloc[:,1].to_list()
+    all_value_zack.append(' ')
+    all_value_zack.append(lst[0])
+    all_value_zack.append(lst[2])
+    all_value_zack.append(df_mst_acc_est_zack.iloc[:,1].to_list()[0])
+    all_value_zack.append(lst[1])
+    all_value_zack.append(' ')
+    all_value_zack.append(lst[4])
+    all_value_zack.append(lst[3])
+    all_value_zack.append(lst[5])
+    all_value_zack.extend([' ' for i in range(2)])
+    lst_revenue_zack = get_sales_zacks(soup_zack)
+    val_revenue_zack = lst_revenue_zack[0].replace('B', '')
+    all_value_zack.append(val_revenue_zack)
+    all_value_zack.append(lst_revenue_zack[1])
+    all_value_zack.append(' ')
+    all_value_zack.append(lst_revenue_zack[3].replace('B', ''))
+    all_value_zack.append(lst_revenue_zack[2].replace('B', ''))
+    all_value_zack.append(lst_revenue_zack[4].replace('B', ''))
+    all_value_zack.append(lst_revenue_zack[5].replace('%', ''))
+    all_value_zack.append(' ')
+    lst_consensus_trend = get_reported_earnings_history(soup_zack)
+    all_value_zack.append(lst_consensus_trend[1])
+    all_value_zack.append(lst_consensus_trend[0])
+    all_value_zack.append(lst_consensus_trend[2])
+    all_value_zack.append(lst_consensus_trend[3].replace('%', ''))
+    all_value_zack.append(' ')
+    lst_magnitude_second = get_magnitude_consensus_estimate_trend(soup_zack)
+    all_value_zack.extend(lst_magnitude_second)
+    all_value_zack.append(' ')
+    lst_revision_zack = get_revision_zack(soup_zack)
+    lst_revision_zack_second = [i for i in lst_revision_zack]
+    all_value_zack.extend(lst_revision_zack_second)
+    all_value_zack.append(' ')
+    res_earning_lst_row_second = earning_estimates_last_row(soup_zack)
+    all_value_zack.extend(res_earning_lst_row_second)
+    all_value_zack.extend([' ' for i in range(3)])
+    upside = [i.replace('%', '') for i in df_mst_acc_est_zack.iloc[:,1].to_list()]
+    all_value_zack.extend(upside)
+    all_value_zack.append(r)
+    all_value_zack.append(' ')
+    return all_value_zack
+
+def main_info_yahoo():
+    all_value_yahoo = []
+    all_value_yahoo.extend([' ' for i in range(4)])
+    all_value_yahoo.append(No_analyst_estimates[0])
+    all_value_yahoo.append(No_analyst_estimates[1])
+    all_value_yahoo.append(No_analyst_estimates[2])
+    all_value_yahoo.append(No_analyst_estimates[3])
+    all_value_yahoo.append(No_analyst_estimates[4])
+    all_value_yahoo.extend([' ' for i in range(3)])
+    lst_revenue_yahoo = get_revenue_estimate_yahoo(soup_yahoo)
+    lst_revenue_yahoo2 = []
+    for i in lst_revenue_yahoo:
+        i = i.replace('B', '')
+        i = i.replace('%', '')
+        lst_revenue_yahoo2.append(i)
+    all_value_yahoo.extend(lst_revenue_yahoo2) 
+    all_value_yahoo.extend(' ')
+    lst_history2 = get_earning_history2(soup_yahoo)
+    lst_history2 = [i.replace('%', '') for i in lst_history2]
+    all_value_yahoo.extend(lst_history2)
+    all_value_yahoo.append(' ')
+    lst_eps = get_eps_trend(soup_yahoo)
+    all_value_yahoo.extend(lst_eps)
+    all_value_yahoo.extend([' ' for i in range(1)])
+    lst_rev = get_revision(soup_yahoo)
+    lst_rev.insert(2, ' ')
+    all_value_yahoo.extend(lst_rev)
+    all_value_yahoo.extend([' ' for i in range(2)])
+    growth_yahoo = get_growth_yahoo(soup_yahoo)
+    growth_yahoo = [(i.replace('%', '')) for i in growth_yahoo]
+    all_value_yahoo.extend(growth_yahoo)
+    all_value_yahoo.extend([' ' for i in range(5)])
+    try:
+        rank = get_rank_yahoo(soup_yahoo)
+        all_value_yahoo.append(rank)
+    except KeyError:
+        rank = ''
+    return all_value_yahoo
+
 def get_earning_estimate (name_stock):
     url_zacks = 'https://www.zacks.com/stock/quote/{}/detailed-estimates'.format(name_stock)
     headers = {'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_10_1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/39.0.2171.95 Safari/537.36'}
@@ -145,10 +237,37 @@ def get_info_for_yahoo(name_stock):
 
 def get_reported_earnings_history(soup_zack):
     toRemove = soup_zack.findAll('table')
+    tb = parse_html_table(toRemove[13])
+    lst_consensus_trend  =  tb.iloc[:,1].to_list()
+    return lst_consensus_trend
+
+def get_rank_yahoo(soup_yahoo):
+    script = soup_yahoo.find("script",text=re.compile("root.App.main")).text
+    data = loads(re.search("root.App.main\s+=\s+(\{.*\})", script).group(1))
+    stores = data["context"]["dispatcher"]["stores"]
+    rank = stores[u'QuoteSummaryStore']['financialData']['recommendationMean']['raw']
+    return rank
+
+def earning_estimates_last_row(soup_zack):
+    toRemove = soup_zack.findAll('table')
+    tb = parse_html_table(toRemove[9])
+    res_earning_lst_row = tb.values[-1].tolist()
+    res_earning_lst_row_second = []
+    for i in res_earning_lst_row[1:]:
+        i = i.replace('%', '')
+        res_earning_lst_row_second.append(i)
+    return res_earning_lst_row_second
+
+
+def get_magnitude_consensus_estimate_trend(soup_zack):
+    toRemove = soup_zack.findAll('table')
     tb = parse_html_table(toRemove[11])
-    print(tb)
-    
-    
+    lst_magnitude_first  =  tb.iloc[:,1].to_list()
+    lst_magnitude_second = []
+    for i in lst_magnitude_first:
+        lst_magnitude_second.append(i)
+    return lst_magnitude_second
+
 def get_sales_zacks(soup_zack):
     toRemove = soup_zack.findAll('table')
     tb = parse_html_table(toRemove[8])
@@ -168,6 +287,13 @@ def get_earning_history(soup_yahoo):
     table1 = parse_html_table(history)
     lst_history = table1.iloc[:,1].to_list()
     return lst_history
+
+def get_earning_history2(soup_yahoo):
+    table =  soup_yahoo.findAll("table", {"class": "W(100%) M(0) BdB Bdc($seperatorColor) Mb(25px)"})
+    history = table[2]
+    table1 = parse_html_table(history)
+    lst_history2 = table1.iloc[:,-1].to_list()
+    return lst_history2
 
 def get_eps_trend(soup_yahoo):
     table =  soup_yahoo.findAll("table", {"class": "W(100%) M(0) BdB Bdc($seperatorColor) Mb(25px)"})
@@ -196,11 +322,6 @@ def get_growth_yahoo(soup_yahoo):
     growth_yahoo  =  table1.iloc[:,1].to_list()
     return growth_yahoo
 
-def upside_zacks(soup_zack):
-    toRemove = soup_zack.findAll('table')
-    tb = parse_html_table(toRemove[12])
-    lst_upside_zack  =  tb.iloc[:,1].to_list()
-    return lst_upside_zack
 
 def _color_if_even(s):
     return ['font-weight: bold' if val == 'Earning Ectimate' or val == 'Revenue / Sales Estimate' or val == 'Earning history' or val == 'EPS Trend' or val == 'EPS Revision' or val == 'Growth Estimates' or val == 'Zacks Upside' else '' for val in s]
@@ -306,159 +427,21 @@ if __name__ == '__main__':
         soup_zack, df, date_zack, df_mst_acc_est_zack  = get_earning_estimate (item)
         soup_yahoo, No_analyst_estimates, date_yahoo = get_info_for_yahoo(item)
         if len(soup_yahoo) == 0 and len(soup_zack) != 0:
+            all_value_zack = main_info_zacks()
             all_value_yahoo = []
-            all_value_zack = []
-            lst = df.iloc[:,1].to_list()
-            all_value_zack.append(' ')
-            all_value_zack.append(lst[0])
-            all_value_zack.append(lst[2])
-            all_value_zack.append(df_mst_acc_est_zack.iloc[:,1].to_list()[0])
-            all_value_zack.extend([' ' for i in range(5)]) 
-            all_value_zack.append(lst[-1])
-            all_value_zack.append('')
-            val_revenue_zack = get_sales_zacks(soup_zack)
-            all_value_zack.append(val_revenue_zack)
-            all_value_zack.extend([' ' for i in range(6)]) 
-            all_value_zack.append('')
-            all_value_zack.extend([' ' for i in range(4)])
-            all_value_zack.append('')
-            all_value_zack.extend([' ' for i in range(5)])
-            all_value_zack.append('')
-            all_value_zack.extend([' ' for i in range(2)])
-            lst_revision_zack = get_revision_zack(soup_zack)
-            all_value_zack.append(lst_revision_zack[2])
-            all_value_zack.extend([' ' for i in range(2)])
-            all_value_zack.append(lst_revision_zack[-1])
-            all_value_zack.append('')
-            all_value_zack.extend([' ' for i in range(6)])
-            all_value_zack.append('')
-            lst_upside_zack = upside_zacks(soup_zack)
-            all_value_zack.extend(lst_upside_zack)
-            all_value_yahoo.extend([' ' for i in range(len(all_value_zack) - 1)]) 
+            all_value_yahoo.extend([' ' for i in range(len(all_value_zack))]) 
             name_stock = item
             write_data(all_value_yahoo, all_value_zack, name_stock, date_zack, date_yahoo)
             
-
         if len(soup_zack) == 0 and len(soup_yahoo) != 0:
-            all_value_yahoo = []
+            all_value_yahoo = main_info_yahoo()
             all_value_zack = []
-            all_value_yahoo.extend([' ' for i in range(4)])
-            all_value_yahoo.append(No_analyst_estimates[0])
-            all_value_yahoo.append(No_analyst_estimates[1])
-            all_value_yahoo.append(No_analyst_estimates[2])
-            all_value_yahoo.append(No_analyst_estimates[3])
-            all_value_yahoo.append(No_analyst_estimates[4])
-            all_value_yahoo.append(' ')
-            all_value_yahoo.append('')
-            all_value_yahoo.append(' ')
-            lst_revenue_yahoo = get_revenue_estimate_yahoo(soup_yahoo)
-            all_value_yahoo.extend(lst_revenue_yahoo)
-            all_value_yahoo.append('')
-            lst_history = get_earning_history(soup_yahoo)
-            all_value_yahoo.extend(lst_history)
-            all_value_yahoo.append('')
-            lst_eps = get_eps_trend(soup_yahoo)
-            all_value_zack.extend([' ' for i in range(5)])
-            all_value_yahoo.extend(lst_eps)
-            all_value_yahoo.append('')
-            lst_rev = get_revision(soup_yahoo)
-            all_value_yahoo.extend(lst_rev[0:2])
-            all_value_yahoo.append(' ')
-            all_value_yahoo.extend(lst_rev[2:])
-            all_value_yahoo.append(' ')
-            all_value_yahoo.append('')
-            growth_yahoo = get_growth_yahoo(soup_yahoo)
-            all_value_yahoo.extend(growth_yahoo)
-            all_value_yahoo.append('')
-            all_value_yahoo.extend([' ' for i in range(3)])
-            all_value_zack.extend([' ' for i in range(len(all_value_yahoo) - 5)]) 
+            all_value_zack.extend([' ' for i in range(len(all_value_yahoo))]) 
             name_stock = item
             write_data(all_value_yahoo, all_value_zack, name_stock, date_zack, date_yahoo)
            
-
         if len(soup_zack) != 0 and len(soup_yahoo) != 0:
-            all_value_yahoo = []
-            all_value_zack = []
-            lst = df.iloc[:,1].to_list()
-            all_value_yahoo.extend([' ' for i in range(4)])
-            all_value_zack.append(' ')
-            all_value_zack.append(float(lst[0])) 
-            all_value_zack.append(float(lst[2])) 
-            all_value_zack.append(df_mst_acc_est_zack.iloc[:,1].to_list()[0])
-            all_value_zack.append(float(lst[1]))
-            all_value_yahoo.append(No_analyst_estimates[0])
-            all_value_yahoo.append(No_analyst_estimates[1])
-            all_value_zack.append(' ')
-            all_value_yahoo.append(No_analyst_estimates[2])
-            all_value_zack.append(float(lst[4]))
-            all_value_yahoo.append(float(No_analyst_estimates[3]))
-            all_value_zack.append(float(lst[3]))
-            all_value_yahoo.append(float(No_analyst_estimates[4]))
-            all_value_zack.append(float(lst[5]))
-            all_value_yahoo.append(' ')
-            all_value_zack.extend([' ' for i in range(2)])
-            lst_revenue_zack = get_sales_zacks(soup_zack)
-            val_revenue_zack = lst_revenue_zack[0].replace('B', '')
-            all_value_zack.append(float(val_revenue_zack))
-            all_value_zack.append(float(lst_revenue_zack[1]))
-            all_value_zack.append(' ')
-            all_value_zack.append(float(lst_revenue_zack[3].replace('B', '')))
-            all_value_yahoo.append('')
-            all_value_yahoo.append(' ')
-            lst_revenue_yahoo = get_revenue_estimate_yahoo(soup_yahoo)
-            lst_revenue_yahoo2 = []
-            for i in lst_revenue_yahoo:
-                i = i.replace('B', '')
-                lst_revenue_yahoo2.append(i)
-            all_value_yahoo.extend(lst_revenue_yahoo2)
-            all_value_zack.append(float(lst_revenue_zack[2].replace('B', '')))
-            all_value_zack.append(float(lst_revenue_zack[4].replace('B', '')))
-            all_value_zack.append(float(lst_revenue_zack[5].replace('%', '')))
-            all_value_zack.append(' ')
-            print(get_reported_earnings_history(soup_zack))
-            
-            
-            
-            
-            
-            #all_value_zack.extend([' ' for i in range(6)]) 
-            all_value_yahoo.append('')
-            #all_value_zack.extend([' ' for i in range(4)])
-            lst_history = get_earning_history(soup_yahoo)
-            all_value_yahoo.extend(lst_history)
-            #all_value_zack.append('')
-            all_value_yahoo.append('')
-            lst_eps = get_eps_trend(soup_yahoo)
-            #all_value_zack.extend([' ' for i in range(5)])
-            all_value_yahoo.extend(lst_eps)
-            #all_value_zack.append('')
-            all_value_yahoo.append('')
-            lst_rev = get_revision(soup_yahoo)
-            #all_value_zack.extend([' ' for i in range(2)])
-            all_value_yahoo.extend(lst_rev[0:2])
-            lst_revision_zack = get_revision_zack(soup_zack)
-            #all_value_zack.append(lst_revision_zack[2])
-            all_value_yahoo.append(' ')
-            #all_value_zack.extend([' ' for i in range(2)])
-            all_value_yahoo.extend(lst_rev[2:])
-            all_value_yahoo.append(' ')
-            #all_value_zack.append(lst_revision_zack[-1])
-            #all_value_zack.append('')
-            all_value_yahoo.append('')
-            growth_yahoo = get_growth_yahoo(soup_yahoo)
-            #all_value_zack.extend([' ' for i in range(6)])
-            all_value_yahoo.extend(growth_yahoo)
-            #all_value_zack.append('')
-            all_value_yahoo.append('')
-            all_value_yahoo.extend([' ' for i in range(3)])
-            lst_upside_zack = upside_zacks(soup_zack)
-            #all_value_zack.extend(lst_upside_zack)
+            all_value_zack = main_info_zacks()
+            all_value_yahoo = main_info_yahoo()
             name_stock = item
-            s1 = pd.Series(title_first_column, name=name_stock)
-            s2 = pd.Series(all_value_yahoo, name=date_yahoo)
-            s3 = pd.Series(all_value_zack, name=date_zack)
-            frames = [s1, s2, s3]
-            result = pd.concat(frames, axis=1)
-            display(result)
-            #write_data(all_value_yahoo, all_value_zack, name_stock, date_zack, date_yahoo)
-            
+            write_data(all_value_yahoo, all_value_zack, name_stock, date_zack, date_yahoo)
