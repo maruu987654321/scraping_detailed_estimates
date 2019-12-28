@@ -26,3 +26,12 @@ Need some way to bulk download raw data files on each stock
 file that can be downloaded with a terminal command or via a basic web interface.)
 
 I am sure this is not very clear so let me know what questions you have.
+
+
+
+TURN
+TUSA
+TUSK
+TVIX
+TVTY
+TW

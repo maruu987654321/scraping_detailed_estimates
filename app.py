@@ -53,7 +53,7 @@ all_value_zack = []
 all_value_yahoo = []
 all_value_zack.append('')
 all_value_yahoo.append('')
-title_first_column = ['Earning Ectimate', 'Zack Consensus Estimate', 'Zack Most Recent Consensus', 'Zacks Most Accurate Estimate', 'No of Analyst / Estimates', 'Avg. Estimate', 'Low Estimate', 'High Estimate', 'Year Ago EPS', 'Year over Year Growth Est.', 'Revenue / Sales Estimate', 'Zack Consensus Estimate', 'No. of Analyst', 'Avg. Estimate', 'Low Estimate', 'High Estimate', 'Year Ago Sales', 'Sales Growth (year/est)', 'Earning history', 'EPS Est.', 'EPS Actual', 'Difference', 'Surprise %', 'EPS Trend', 'Current Estimate', 'Up 7 Days Ago', 'Up 30 Days Ago', 'Up 60 Days Ago', 'Up 90 Days Ago', 'EPS Revision', 'Up Last 7 Days', 'Up Last 30 Days', 'Up Last 60 Days', 'Down Last 7 Days', 'Down Last 30 Days', 'Down Last 60 Days', 'Growth Estimates', 'Current Qtr.', 'Next Qtr.', 'Current Year', 'Next Year', 'Next 5 Years (per annum)', 'Past 5 Years (per annum)', 'Zacks Upside', 'Zacks Most Accurate Estimate', 'Zacks Consensus Estimate', 'Earning Expected Surprise','Zacks Rank', 'Yahoo Rank']
+title_first_column = ['Earning Estimate', 'Zack Consensus Estimate', 'Zack Most Recent Consensus', 'Zacks Most Accurate Estimate', 'No of Analyst / Estimates', 'Avg. Estimate', 'Low Estimate', 'High Estimate', 'Year Ago EPS', 'Year over Year Growth Est.', 'Revenue / Sales Estimate', 'Zack Consensus Estimate', 'No. of Analyst', 'Avg. Estimate', 'Low Estimate', 'High Estimate', 'Year Ago Sales', 'Sales Growth (year/est)', 'Earning history', 'EPS Est.', 'EPS Actual', 'Difference', 'Surprise %', 'EPS Trend', 'Current Estimate', 'Up 7 Days Ago', 'Up 30 Days Ago', 'Up 60 Days Ago', 'Up 90 Days Ago', 'EPS Revision', 'Up Last 7 Days', 'Up Last 30 Days', 'Up Last 60 Days', 'Down Last 7 Days', 'Down Last 30 Days', 'Down Last 60 Days', 'Growth Estimates', 'Current Qtr.', 'Next Qtr.', 'Current Year', 'Next Year', 'Next 5 Years (per annum)', 'Past 5 Years (per annum)', 'Zacks Upside', 'Zacks Most Accurate Estimate', 'Zacks Consensus Estimate', 'Earning Expected Surprise','Zacks Rank', 'Yahoo Rank']
 
 def read_stocks(name_file_with_stock):
     df = pd.read_excel (name_file_with_stock) 
@@ -120,7 +120,8 @@ def main_info_zacks():
     all_value_zack.append(lst[4])
     all_value_zack.append(lst[3])
     all_value_zack.append(lst[5])
-    all_value_zack.extend([' ' for i in range(2)])
+    all_value_zack.append(lst[-1])
+    all_value_zack.extend([' ' for i in range(1)])
     lst_revenue_zack = get_sales_zacks(soup_zack)
     val_revenue_zack = lst_revenue_zack[0].replace('B', '')
     all_value_zack.append(val_revenue_zack)
@@ -445,3 +446,4 @@ if __name__ == '__main__':
             all_value_yahoo = main_info_yahoo()
             name_stock = item
             write_data(all_value_yahoo, all_value_zack, name_stock, date_zack, date_yahoo)
+ 

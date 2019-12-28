@@ -53,13 +53,23 @@ if __name__ == '__main__':
             ws.column_dimensions['C'].width = 25 #width for C column
             ws.column_dimensions['D'].width = 25 #width for D column
             ws.column_dimensions['E'].width = 25  #width for E column
+            try:
+                ws['B6'].value = float(ws['B6'].value)
+                ws['B39'].value = float(ws['B39'].value)
+                ws['C32'].value = float(ws['C32'].value)
+                ws['C33'].value = float(ws['C33'].value)
+                ws['C34'].value = float(ws['C34'].value)
+                ws['C35'].value = float(ws['C35'].value)
+                ws['C36'].value = float(ws['C36'].value)
+                ws['C37'].value = float(ws['C37'].value)
+            except ValueError:
+                continue
             for i in range(1, 51):
                 first_row = 'B{}'.format(i)
                 second_row = 'Y{}'.format(i)
                 for row in ws[first_row:second_row]: 
                     for cell in row: 
                         cell.alignment = al 
-
             wb.save(filename='{}.xlsx'.format(str_n))
 
         except KeyError:
