@@ -5,6 +5,49 @@ import yaml
 import pandas as pd 
 from openpyxl.styles import Alignment
 from openpyxl import load_workbook
+import os
+
+def createFolder(directory):
+    try:
+        if not os.path.exists(directory):
+            os.makedirs(directory)
+    except OSError:
+        print ('Error: Creating directory. ' +  directory)
+        
+def create_excel(str_n):
+    writer = pd.ExcelWriter('{}.xlsx'.format(str_n))
+    df.to_excel(writer, '{}'.format(str_n),  index=False)
+    writer.save()
+    wb = load_workbook("{}.xlsx".format(str_n))
+    ws = wb['{}'.format(str_n)]
+    al = Alignment(horizontal='right')
+
+    ws.column_dimensions['A'].width = 30 #width for A coolumn
+    ws.column_dimensions['B'].width = 25 #width for B column
+    ws.column_dimensions['C'].width = 25 #width for C column
+    ws.column_dimensions['D'].width = 25 #width for D column
+    ws.column_dimensions['E'].width = 25  #width for E column
+    ws.column_dimensions['F'].width = 25  #width for F column
+    ws.column_dimensions['G'].width = 25  #width for G column
+
+    for i in range(1, 51):
+        first_row = 'B{}'.format(i)
+        second_row = 'Y{}'.format(i)
+        for row in ws[first_row:second_row]: 
+            for cell in row: 
+                 cell.alignment = al 
+
+    for i in range(1, 51):
+        first_row = 'B{}'.format(i)
+        second_row = 'Y{}'.format(i)
+        for row in ws[first_row:second_row]:
+            for cell in row:
+                try:
+                    float(cell.value)
+                except  (TypeError, ValueError):
+                    continue
+
+    wb.save(filename='./database_export/{}.xlsx'.format(str_n))
 
 def from_df_to_excel(name):
     database_connection = sqlalchemy.create_engine('mysql+mysqlconnector://{0}:{1}@{2}/{3}'.
@@ -21,6 +64,7 @@ def load_config(config_file):
             print(exc)
 
 if __name__ == '__main__':
+    createFolder('./database_export/')
     config = load_config('config.yaml')
     database_username = config['database_username']   #type your username
     database_password =  config['password']   #type your password
@@ -42,35 +86,6 @@ if __name__ == '__main__':
         df = from_df_to_excel(str_n)
         try:
             del df['index']
-            writer = pd.ExcelWriter('{}.xlsx'.format(str_n))
-            df.to_excel(writer, '{}'.format(str_n),  index=False)
-            writer.save()
-            wb = load_workbook("{}.xlsx".format(str_n))
-            ws = wb['{}'.format(str_n)]
-            al = Alignment(horizontal='right')
-            ws.column_dimensions['A'].width = 30 #width for A coolumn
-            ws.column_dimensions['B'].width = 25 #width for B column
-            ws.column_dimensions['C'].width = 25 #width for C column
-            ws.column_dimensions['D'].width = 25 #width for D column
-            ws.column_dimensions['E'].width = 25  #width for E column
-            try:
-                ws['B6'].value = float(ws['B6'].value)
-                ws['B39'].value = float(ws['B39'].value)
-                ws['C32'].value = float(ws['C32'].value)
-                ws['C33'].value = float(ws['C33'].value)
-                ws['C34'].value = float(ws['C34'].value)
-                ws['C35'].value = float(ws['C35'].value)
-                ws['C36'].value = float(ws['C36'].value)
-                ws['C37'].value = float(ws['C37'].value)
-            except ValueError:
-                continue
-            for i in range(1, 51):
-                first_row = 'B{}'.format(i)
-                second_row = 'Y{}'.format(i)
-                for row in ws[first_row:second_row]: 
-                    for cell in row: 
-                        cell.alignment = al 
-            wb.save(filename='{}.xlsx'.format(str_n))
-
+            create_excel(str_n)
         except KeyError:
-            df.to_excel('{}.xlsx'.format(str_n), engine='xlsxwriter', index=False)
+            create_excel(str_n)
