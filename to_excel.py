@@ -15,10 +15,10 @@ def createFolder(directory):
         print ('Error: Creating directory. ' +  directory)
         
 def create_excel(str_n):
-    writer = pd.ExcelWriter('{}.xlsx'.format(str_n))
+    writer = pd.ExcelWriter('./database_export/{}.xlsx'.format(str_n))
     df.to_excel(writer, '{}'.format(str_n),  index=False)
     writer.save()
-    wb = load_workbook("{}.xlsx".format(str_n))
+    wb = load_workbook("./database_export/{}.xlsx".format(str_n))
     ws = wb['{}'.format(str_n)]
     al = Alignment(horizontal='right')
 
